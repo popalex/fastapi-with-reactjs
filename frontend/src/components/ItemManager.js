@@ -6,7 +6,11 @@ import axios from 'axios';
 const ItemManager = () => {
   const [items, setItems] = useState([]);
   const [currentItem, setCurrentItem] = useState(null);
-  const backendApi = process.env.REACT_APP_BACKEND_API;
+  //const backendApi = process.env.REACT_APP_BACKEND_API;
+  const backendApi = process.env.REACT_APP_BACKEND_API || '/api';
+  console.log(`backendApi list = ${backendApi}`)
+  console.log(process.env)
+
 
   useEffect(() => {
     fetchItems();

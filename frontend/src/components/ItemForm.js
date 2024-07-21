@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const ItemForm = ({ currentItem, onSave }) => {
-  const backendApi = process.env.REACT_APP_BACKEND_API;
+  //const backendApi = process.env.REACT_APP_BACKEND_API;
+  const backendApi = process.env.REACT_APP_BACKEND_API || '/api';
+  console.log(`backendApi form = ${backendApi}`)
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
 

@@ -5,21 +5,27 @@ services:
     image: mongo:4.4
     container_name: mongo
     ports:
-      - "27017:27017"
+      # - "27017:27017"
+      - 27017
     volumes:
       - mongo_data:/data/db
+    networks:
+      - backend
 
-  web:
+  restapi:
     build:
       context: ./app
       dockerfile: Dockerfile
     container_name: fastapi
     ports:
-      - "8000:8000"
+      # - "8000:8000"
+      - 8000
     environment:
       - MONGO_DETAILS=mongodb://mongo:27017
     depends_on:
       - mongo
+    networks:
+      - backend
 
   frontend:
     build:
@@ -27,11 +33,31 @@ services:
       dockerfile: Dockerfile
     container_name: react_app
     ports:
-      - "3000:3000"
+      # - "3000:3000"
+      - 3000
     depends_on:
-      - web
+      - restapi
     environment:
-      - REACT_APP_BACKEND_API=http://fastapi:8000
+      - REACT_APP_BACKEND_API=http://fastapi:8000/api
+    networks:
+      - backend
+
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - restapi
+      - frontend
+    networks:
+      - backend
 
 volumes:
   mongo_data:
+
+networks:
+  backend:
+    driver: bridge
