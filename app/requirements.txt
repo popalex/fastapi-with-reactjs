@@ -1,6 +1,6 @@
-fastapi
-motor
-pydantic
-uvicorn
-python-dotenv
-starlette #CORS
+fastapi==0.111.1
+motor==3.5.1
+pydantic==2.8.2
+uvicorn==0.30.3
+python-dotenv==1.0.1
+starlette==0.37.2 #CORS
