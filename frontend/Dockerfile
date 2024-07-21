@@ -1,3 +1,6 @@
+# Declare the build argument in the global scope
+ARG REACT_APP_BACKEND_API_ARG=TEST
+
 # Use an official Node runtime as a parent image
 FROM node:20-alpine
 
@@ -13,7 +16,13 @@ RUN npm install
 # Copy the rest of the application code
 COPY . .
 
+# Consume the build argument in the build stage
+ARG REACT_APP_BACKEND_API_ARG
+ENV REACT_APP_BACKEND_API=${REACT_APP_BACKEND_API_ARG}
+
+RUN echo $REACT_APP_BACKEND_API
 # Build the React app
+# WE need the env variable to be available at BUILD TIME
 RUN npm run build
 
 # Serve the app using serve
