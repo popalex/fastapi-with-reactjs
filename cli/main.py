@@ -5,6 +5,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.operations import SearchIndexModel
 from sentence_transformers import SentenceTransformer, util
 import pandas as pd
+import asyncio
 
 # Load environment variables from .env file
 load_dotenv()
@@ -26,27 +27,32 @@ def import_data():
     db["database_name"]["items"].collection.delete_many({})
     db["database_name"]["items"].insert_many(data)
 
-    print('Done!')
+    print("CSV Import Done!")
 
-def add_embeddings():
+async def add_embeddings():
     db = get_database()
     items = db["database_name"]["items"].find()
 
     model = SentenceTransformer("all-MiniLM-L6-v2")
-    print(model.max_seq_length)
 
-    for item in items:
-        print(f"Got item {item}")
+    for item in await items.to_list(1000):
+        print(f"Got movie {item['Series_Title']}")
         embeddings = model.encode(item["Overview"], normalize_embeddings=True)
+        item["plot_vect"] = embeddings
+        item["Series_Title"] = item["Series_Title"] + "1"
+        max_len = len(embeddings)
         db["database_name"]["items"].update_one(
             {"_id": item["_id"]},
-            {"$set": {'plot_vect': embeddings[0]}}
+            # {"$set": {'plot_vect': embeddings}}
+            {"$set": item}
             )
 
-    return model.max_seq_length
+    return max_len
 
 def add_index(field_name: str, vector_length: int):
     db = get_database()
+
+    # should "similarity" be "cosine"?
 
     search_model = SearchIndexModel(
     definition={
@@ -56,7 +62,7 @@ def add_index(field_name: str, vector_length: int):
                     "type": "vector",
                     "path": field_name,
                     "numDimensions": vector_length,
-                    "similarity": "cosine",
+                    "similarity": "dotProduct",
                 }
             ],
         }
@@ -64,11 +70,15 @@ def add_index(field_name: str, vector_length: int):
     name="scenario_vector_index",
     )
     db["database_name"]["items"].create_search_index(search_model)
+    print("Added search index !")
 
-def main():
+async def main():
     import_data()
-    vect_lenght = add_embeddings()
+    vect_lenght = await add_embeddings()
     add_index("plot_vect", vect_lenght)
     
 if __name__ == '__main__':
-    main()
+    # See this for details:
+    # https://stackoverflow.com/questions/50757497/simplest-async-await-example-possible-in-python
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
