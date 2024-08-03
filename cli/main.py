@@ -35,17 +35,19 @@ async def add_embeddings():
 
     model = SentenceTransformer("all-MiniLM-L6-v2")
 
-    for item in await items.to_list(1000):
+    async for item in items:
         print(f"Got movie {item['Series_Title']}")
-        embeddings = model.encode(item["Overview"], normalize_embeddings=True)
-        item["plot_vect"] = embeddings
-        item["Series_Title"] = item["Series_Title"] + "1"
+        embeddings = model.encode(item["Overview"], normalize_embeddings=True).tolist()
+        new_title = item["Series_Title"] + "1"
         max_len = len(embeddings)
         db["database_name"]["items"].update_one(
             {"_id": item["_id"]},
-            # {"$set": {'plot_vect': embeddings}}
-            {"$set": item}
+            {"$set": { "plot_vect": embeddings }}
+            # {"$set": {"Series_Title": new_title, "key": "value", "plot_vect": embeddings }},
             )
+        
+        # one = await db["database_name"]["items"].find_one({"_id": item["_id"]})
+        # print(f"New Item: {one}")
 
     return max_len
 
