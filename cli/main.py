@@ -74,10 +74,50 @@ def add_index(field_name: str, vector_length: int):
     db["database_name"]["items"].create_search_index(search_model)
     print("Added search index !")
 
+async def check_index(field_name: str):
+    db = get_database()
+
+    # Define the query vector (adjust based on your application)
+    query_vector = [0.1, 0.2, 0.3, 0.4]  # Replace with the actual vector
+
+    # Perform the vector search query
+    results = db["database_name"]["items"].aggregate([
+        {
+            "$search": {
+                "index": "scenario_vector_index",
+                "knnBeta": {
+                    "vector": query_vector,
+                    "path": field_name,
+                    "k": 10  # Adjust k based on how many similar results you want
+                }
+            }
+        }
+    ])
+
+    # Print out the results
+    async for result in results:
+        print(result)
+
+    explain_result = db["database_name"]["items"].aggregate([
+        {
+            "$search": {
+                "index": "scenario_vector_index",
+                "knnBeta": {
+                    "vector": query_vector,
+                    "path": field_name,
+                    "k": 10
+                }
+            }
+        }
+    ], explain=True)
+
+    print(explain_result)
+
 async def main():
     import_data()
     vect_lenght = await add_embeddings()
     add_index("plot_vect", vect_lenght)
+    # await check_index("plot_vect")
     
 if __name__ == '__main__':
     # See this for details:
