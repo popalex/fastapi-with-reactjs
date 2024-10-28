@@ -1,7 +1,7 @@
 # Run Mongo Atlas Local:
 
 ```shell
-docker run -p 27017:27017 mongodb/mongodb-atlas-local
+docker run -p 27017:27017 mongodb/mongodb-atlas-local:7.0.14
 ```
 
 # Run MongoSH

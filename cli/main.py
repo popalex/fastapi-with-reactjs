@@ -11,7 +11,7 @@ import asyncio
 load_dotenv()
 
 # Get the MongoDB URI from environment variables
-MONGO_DETAILS = os.getenv('MONGO_DETAILS', 'mongodb://127.0.0.1:27017')
+MONGO_DETAILS = os.getenv('MONGO_DETAILS', 'mongodb://localhost:27017/?directConnection=true')
 
 print(f"Got MONGO_DETAILS {MONGO_DETAILS}")
 
