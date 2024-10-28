@@ -11,7 +11,7 @@ import asyncio
 load_dotenv()
 
 # Get the MongoDB URI from environment variables
-MONGO_DETAILS = os.getenv('MONGO_DETAILS', 'mongodb://127.0.0.1:27017')
+MONGO_DETAILS = os.getenv('MONGO_DETAILS', 'mongodb://localhost:27017/?directConnection=true')
 
 print(f"Got MONGO_DETAILS {MONGO_DETAILS}")
 
@@ -64,7 +64,9 @@ def add_index(field_name: str, vector_length: int):
                     "type": "vector",
                     "path": field_name,
                     "numDimensions": vector_length,
-                    "similarity": "dotProduct",
+                    # "similarity": "dotProduct",
+                    # "similarity": "cosine",
+                    "similarity": "euclidean"
                 }
             ],
         }
@@ -77,20 +79,27 @@ def add_index(field_name: str, vector_length: int):
 async def check_index(field_name: str):
     db = get_database()
 
+    indexes = db["database_name"]["items"].list_search_indexes()
+
+    async for idx in indexes:
+        print(idx)
+
+    model = SentenceTransformer("all-MiniLM-L6-v2")
+    query_vector = model.encode('test', normalize_embeddings=True).tolist()
+
     # Define the query vector (adjust based on your application)
-    query_vector = [0.1, 0.2, 0.3, 0.4]  # Replace with the actual vector
+    # query_vector = [-0.06326334923505783,0.04146251082420349,-0.0470753014087677]  # Replace with the actual vector
 
     # Perform the vector search query
     results = db["database_name"]["items"].aggregate([
         {
-            "$search": {
+            "$vectorSearch": {
                 "index": "scenario_vector_index",
-                "knnBeta": {
-                    "vector": query_vector,
-                    "path": field_name,
-                    "k": 10  # Adjust k based on how many similar results you want
+                "numCandidates": 150,
+                "limit": 10,
+                "queryVector": query_vector,
+                "path": field_name,
                 }
-            }
         }
     ])
 
@@ -100,24 +109,24 @@ async def check_index(field_name: str):
 
     explain_result = db["database_name"]["items"].aggregate([
         {
-            "$search": {
+            "$vectorSearch": {
                 "index": "scenario_vector_index",
-                "knnBeta": {
-                    "vector": query_vector,
-                    "path": field_name,
-                    "k": 10
+                "limit": 10,
+                "numCandidates": 150,
+                "queryVector": query_vector,
+                "path": field_name,
                 }
-            }
         }
     ], explain=True)
 
-    print(explain_result)
+    async for result in explain_result:
+        print(result)
 
 async def main():
     import_data()
-    vect_lenght = await add_embeddings()
-    add_index("plot_vect", vect_lenght)
-    # await check_index("plot_vect")
+    # vect_lenght = await add_embeddings()
+    # add_index("plot_vect", vect_lenght)
+    await check_index("plot_vect")
     
 if __name__ == '__main__':
     # See this for details:
